@@ -1,11 +1,24 @@
 # Bing Daily Photo
 
+[![CircleCI](https://circleci.com/gh/grubersjoe/bing-daily-photo.svg?style=shield)](https://circleci.com/gh/grubersjoe/bing-daily-photo)
+
 BingPhoto is a simple PHP class to fetch Bing's image of the day with meta data.
+
+It is also possible to cache the images locally, which can be useful in combination with a periodic cronjob. See the `cacheDir` parameter for this (optional) feature. Disclaimer: this might be a copyright issue.
+
+## Installation
+
+Use [Composer](https://getcomposer.org/) to install this package:
+
+```sh
+composer require grubersjoe/bing-daily-photo
+```
 
 ## Basic usage
 
 ```php
-$bing  = new BingPhoto();
+<?php
+$bing = new grubersjoe\BingPhoto();
 $image = $bing->getImage();
 
 // Example result ($image)
@@ -20,29 +33,62 @@ $image = $bing->getImage();
 ]
 ```
 
-## Parameters
+## Parameters / options
 
-The class has some optional parameters to control various options:
+Breaking change as of v1: the parameter `resolution` was renamed to `quality`. See also the constants `BingPhoto::QUALITY_LOW` and `BingPhoto::QUALITY_HIGH`.
 
 | Parameter   |Description        |Default              |Valid values|
 |-------------|-------------------|---------------------|------------|
-| $date|Date of photo|`BingPhoto::DATE_TODAY` |`BingPhoto::DATE_YESTERDAY`, `BingPhoto::DATE_TODAY`, `BingPhoto::DATE_TOMORROW`, `any integer >= -1`|
-| $n|Number of photos to fetch, going from date backwards|1|1 - 8|
-| $locale     |Locale code|en-US|Whatever language Bing supports|
-| $resolution |Image resolution|`BingPhoto::RESOLUTION_HIGH`|`BingPhoto::RESOLUTION_LOW`, `BingPhoto::RESOLUTION_HIGH`|
+| `cacheDir` | Directory for image caching | `null` | An existing directory, otherwise the directory will be created if possible |
+| `date` | Date of photo | `BingPhoto::DATE_TODAY` |`BingPhoto::DATE_YESTERDAY`<br>`BingPhoto::DATE_TODAY`<br>`BingPhoto::DATE_TOMORROW`<br>`any integer >= -1` |
+| `locale` |Locale code | `Locale::getDefault()` | Whatever language Bing supports |
+| `n` | Number of photos to fetch, going from date backwards | 1 | 1 - 8 |
+| `quality` | Image resolution | `BingPhoto::QUALITY_HIGH` | `BingPhoto::QUALITY_LOW`<br>`BingPhoto::QUALITY_HIGH` |
+
 
 ## Examples
 
 ```php
-// Fetches two images of the day in high resolution from the American Bing portal
-$bing  = new BingPhoto(BingPhoto::YESTERDAY, 2);
-$images = $bing->getImages();
-```
+// Fetches two images of the day starting yesterday from Bing
+$bing = new grubersjoe\BingPhoto([
+    'n' => 2,
+    'date' => grubersjoe\BingPhoto::YESTERDAY
+]);
 
-```php
-// Fetches three images of the day in low resolution, starting yesterday from the French Bing portal
-$bing  = new BingPhoto(BingPhoto::YESTERDAY, 3, 'fr-FR', BingPhoto::RESOLUTION_LOW);
 foreach ($bing->getImages() as $image) {
     printf('<img src="%s">', $image['url']);
 }
+```
+
+```php
+// Fetches the current image of the day in low resolution from the French Bing portal
+$bing = new grubersjoe\BingPhoto([
+    'locale' => 'fr-FR',
+    'quality' => grubersjoe\BingPhoto::QUALITY_LOW,
+]);
+
+printf('<img src="%s">', $bing->getImage()['url']);
+```
+
+```php
+// Fetches three images of the day in high quality from the German Bing portal, starting yesterday
+$bing = new grubersjoe\BingPhoto([
+    'n' => 3,
+    'date' => grubersjoe\BingPhoto::YESTERDAY,
+    'locale' => 'de-DE',
+    'quality' => grubersjoe\BingPhoto::QUALITY_HIGH,
+]);
+
+foreach ($bing->getImages() as $image) {
+    printf('<img src="%s">', $image['url']);
+}
+```
+
+```php
+// Using the local cache 
+$bing = new grubersjoe\BingPhoto([
+    'cacheDir' => '/tmp/bing-photo',
+    'n' => 5,
+    'quality' => grubersjoe\BingPhoto::QUALITY_LOW,
+]);
 ```
